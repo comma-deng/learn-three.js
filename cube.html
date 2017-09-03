@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+
+<html>
+<meta http-equiv="Content-Type" content="text/html;charset=UTF-8">
+	<head>
+        <style>
+        	body {
+                background-color: #FFFFCC;
+				color: #000;
+				margin: 0px;
+				overflow: hidden;
+			}
+            .floating-text{
+                font-family: Monospace;
+                position:absolute;
+                width: 100%;
+                text-align: center;
+            }
+        </style>
+	</head>
+	<body>
+    <div class="floating-text">
+        <p>simple cube</p>
+        <p>num 1-9  rotate cube</p>
+    </div>
+		<script src="js/three.js"></script>
+		<script src="js/controls/OrbitControls.js"></script>
+		<script>
+            Colors = {
+                white: 0xffffff,
+                yellow: 0xffff66,
+                orange: 0xff9900,
+                blue:  0x0066cc,
+                red:  0xff66666,
+                green:0x00cc00,
+            };
+			function CubeFace(indexArray,axis){
+                this.cubePivotIndexArray = indexArray;
+				this.axis = axis;
+                this.rotate = function(radians){
+                    for(var i=0;i<this.cubePivotIndexArray.length;i++)
+                    {
+                        var index = this.cubePivotIndexArray[i];
+                        var cubeAxis = this.axis.clone();
+                        cubeAxis =  cubePivots[index].worldToLocal(cubeAxis);
+                        cubePivots[index].rotateOnAxis(cubeAxis,radians);
+                    }
+                }
+			}
+            const SPACING = 51;
+		 	var camera,scene,renderer;
+		 	var positions = new Array();
+            var cubePositionDict = {};
+            var cubePivots = new Array();
+		 	var cubeFaces = new Array();
+            var curRad = 0;
+            var curCubeFace;
+            var isRotating = false;
+            
+
+			camera = new THREE.PerspectiveCamera( 45, window.innerWidth/window.innerHeight, 0.1, 1000 );
+		    camera.position.z = 400;
+
+
+		    scene = new THREE.Scene();
+
+		    var geometry = new THREE.BoxGeometry(50,50,50);
+            /*
+            var cubeMaterials = [];
+
+            cubeMaterials[0] = new THREE.MeshPhongMaterial({
+                color      :  new THREE.Color("rgb(255,0,0)"),
+                emissive   :  new THREE.Color("rgb(255,0,0)"),
+                specular   :  new THREE.Color("rgb(229,111,14)"),
+                shininess  :  30,
+                shading    :  THREE.SmoothShading,
+                transparent: 1,
+                opacity    : 1
+                });
+
+            cubeMaterials[1] = new THREE.MeshPhongMaterial({
+                color      :  new THREE.Color("rgb(255,255,0)"),
+                emissive   :  new THREE.Color("rgb(255,0,0)"),
+                specular   :  new THREE.Color("rgb(229,111,14)"),
+                shininess  :  30,
+                shading    :  THREE.FlatShading,
+                transparent: 1,
+                opacity    : 1
+                });
+
+            cubeMaterials[2] = new THREE.MeshPhongMaterial({
+                color      :  new THREE.Color("rgb(176,64,0)"),
+                emissive   :  new THREE.Color("rgb(175,25,95)"),
+                specular   :  new THREE.Color("rgb(229,111,14)"),
+                shininess  :  30,
+                shading    :  THREE.FlatShading,
+                transparent: 1,
+                opacity    : 1
+                });
+
+            cubeMaterials[3] = new THREE.MeshPhongMaterial({
+                color      :  new THREE.Color("rgb(176,64,0)"),
+                emissive   :  new THREE.Color("rgb(175,25,95)"),
+                specular   :  new THREE.Color("rgb(229,111,14)"),
+                shininess  :  30,
+                shading    :  THREE.FlatShading,
+                transparent: 1,
+                opacity    : 1
+                });
+
+            cubeMaterials[4] = new THREE.MeshPhongMaterial({
+                color      :  new THREE.Color("rgb(176,64,0)"),
+                emissive   :  new THREE.Color("rgb(175,25,95)"),
+                specular   :  new THREE.Color("rgb(229,111,14)"),
+                shininess  :  30,
+                shading    :  THREE.FlatShading,
+                transparent: 1,
+                opacity    : 1
+                });
+
+            cubeMaterials[5] = new THREE.MeshPhongMaterial({
+                color      :  new THREE.Color("rgb(176,64,0)"),
+                emissive   :  new THREE.Color("rgb(175,25,95)"),
+                specular   :  new THREE.Color("rgb(229,111,14)"),
+                shininess  :  30,
+                shading    :  THREE.FlatShading,
+                transparent: 1,
+                opacity    : 1
+                });
+
+            var light = new THREE.PointLight( 0xffffff, 10000, 1000 );
+            light.position.set( 0, 80, 160 );
+            scene.add( light );
+
+            var mesh = new THREE.Mesh( geometry, cubeMaterials);
+            */
+
+            
+		    geometry.faces[0].color = new THREE.Color( Colors.white );
+		    geometry.faces[1].color = new THREE.Color( Colors.white  );
+
+		    geometry.faces[2].color = new THREE.Color( Colors. yellow);
+		    geometry.faces[3].color = new THREE.Color( Colors. yellow);
+
+		    geometry.faces[4].color = new THREE.Color( Colors. green);
+		    geometry.faces[5].color = new THREE.Color( Colors.green);
+
+		    geometry.faces[6].color = new THREE.Color( Colors. blue);
+		    geometry.faces[7].color = new THREE.Color( Colors. blue);
+
+		    geometry.faces[8].color = new THREE.Color( Colors. orange);
+		    geometry.faces[9].color = new THREE.Color( Colors. orange);
+
+		    geometry.faces[10].color = new THREE.Color( Colors. red);
+		    geometry.faces[11].color = new THREE.Color( Colors. red);
+
+
+		    var cubeMaterial = new THREE.MeshBasicMaterial( 
+			    { color: 0xffffff, shading: THREE.FlatShading, 
+			    vertexColors: THREE.VertexColors } );
+            
+
+		    var mesh = new THREE.Mesh( geometry, cubeMaterial);
+
+		    initPositions();
+            initCubePositionDict();
+            initCubePivots();
+		    initCubeFaces();
+		    renderer    = new THREE.WebGLRenderer({
+		        antialias    : true,
+		        alpha        : true
+		    });
+		    renderer.setPixelRatio(window.devicePixelRatio);
+		    renderer.setSize( window.innerWidth, window.innerHeight );
+
+		    document.body.appendChild(renderer.domElement);
+
+		    var controls = new THREE.OrbitControls( camera, renderer.domElement );
+		    controls.minDistance = 20;
+		    controls.maxDistance = 1000;
+		    controls.maxPolarAngle = Math.PI;
+    
+		    window.setInterval("aniamte()", 30);
+            window.addEventListener('keydown',keyboardDownInputHandler);
+
+
+            function keyboardDownInputHandler(event){
+                if(isRotating)
+                {
+                    return;
+                }
+                switch(event.key)
+                {
+                    case "1":
+                        initRoatate(cubeFaces[0]);
+                        break;
+                    case "2":
+                        initRoatate(cubeFaces[1]);
+                        break;
+                    case "3":
+                        initRoatate(cubeFaces[2]);
+                        break;
+                    case "4":
+                        initRoatate(cubeFaces[3]);
+                        break;
+                    case "5":
+                        initRoatate(cubeFaces[4]);
+                        break;
+                    case "6":
+                        initRoatate(cubeFaces[5]);
+                        break;
+                    case "7":
+                        initRoatate(cubeFaces[6]);
+                        break;
+                    case "8":
+                        initRoatate(cubeFaces[7]);
+                        break;
+                    case "9":
+                        initRoatate(cubeFaces[8]);
+                        break;
+                }
+
+            }
+
+		    function aniamte(){
+                renderer.render( scene, camera );
+                rotateCubeFace(curCubeFace);
+    		}
+
+    		function initPositions(){
+    			positions[0] = new THREE.Vector3( -1, 0, 0);
+    			positions[1] = new THREE.Vector3( -1, 1, 0);
+    			positions[2] = new THREE.Vector3( -1, 1, 1);
+    			positions[3] = new THREE.Vector3( -1, 0, 1);
+    			positions[4] = new THREE.Vector3( -1, -1, 1);
+    			positions[5] = new THREE.Vector3( -1, -1, 0);
+    			positions[6] = new THREE.Vector3( -1, -1, -1);
+    			positions[7] = new THREE.Vector3( -1, 0, -1);
+    			positions[8] = new THREE.Vector3( -1, 1, -1);
+
+    			positions[9] = new THREE.Vector3( 0, 0, 0);
+    			positions[10] = new THREE.Vector3( 0, 1, 0);
+    			positions[11] = new THREE.Vector3( 0, 1, 1);
+    			positions[12] = new THREE.Vector3( 0, 0, 1);
+    			positions[13] = new THREE.Vector3( 0, -1, 1);
+    			positions[14] = new THREE.Vector3( 0, -1, 0);
+    			positions[15] = new THREE.Vector3( 0, -1, -1);
+    			positions[16] = new THREE.Vector3( 0, 0, -1);
+    			positions[17] = new THREE.Vector3( 0, 1, -1);
+
+    			positions[18] = new THREE.Vector3( 1, 0, 0);
+    			positions[19] = new THREE.Vector3( 1, 1, 0);
+    			positions[20] = new THREE.Vector3( 1, 1, 1);
+    			positions[21] = new THREE.Vector3( 1, 0, 1);
+    			positions[22] = new THREE.Vector3( 1, -1, 1);
+    			positions[23] = new THREE.Vector3( 1, -1, 0);
+    			positions[24] = new THREE.Vector3( 1, -1, -1);
+    			positions[25] = new THREE.Vector3( 1, 0, -1);
+    			positions[26] = new THREE.Vector3( 1, 1, -1);
+    			
+    		}
+
+            function initCubePositionDict()
+            {
+                for(var i=0;i<positions.length;i++)
+                {
+                    var str = vector3ToString(positions[i]);
+
+                    cubePositionDict[str] = i;
+                }
+            }
+
+            function initCubePivots(){
+                for(var i=0;i<positions.length;i++)
+                {
+                    var cubeMesh = mesh.clone();
+                    var  edges = new THREE.EdgesGeometry( geometry );
+                    var line = new THREE.LineSegments( edges, new THREE.LineBasicMaterial( { color: 0xffffff } ) );
+                    cubeMesh.add( line );
+                    cubeMesh.position.add(positions[i].clone().multiplyScalar(SPACING));
+                    var pivot = new THREE.Object3D();
+                    pivot.position.set(0,0,0);
+                    pivot.add(cubeMesh);
+                    cubePivots.push(pivot);
+                    scene.add(pivot);
+                    var worldRotation = cubeMesh.getWorldRotation ();
+                    var worldposition = cubeMesh.getWorldPosition();
+                }
+            }
+
+    		function initCubeFaces(){
+                var indexArray = new Array();
+    			for(var i=0;i<3;i++)
+    				for(var j=-1;j<=1;j++)
+    				{
+    					for(var k=0;k<27;k++)
+    					{
+    						var index = i; //在vector3当中的下标
+    						var val = j; //数值
+
+    						if(positions[k].getComponent(index) == val)
+    						{
+
+                                indexArray.push(k);
+    						}
+
+    					}
+    					var axis = new THREE.Vector3( 0, 0, 0 );
+    					axis.setComponent(i,1);
+    					var faceIndex = i*3+j+1;
+    					cubeFaces[faceIndex] = new CubeFace(indexArray,axis);
+    					indexArray = [];
+    				}
+    			/*
+    			var indices = new Array();
+    			indices = [0,1,2,3,4,5,6,7,8];
+    			for(var i=0;i<9;i++)
+    			{
+    				cubeArray.push(cubes[indices[i]]);
+    			}
+    			cubeFaces[0] = new CubeFace(cubeArray,new THREE.Vector3( 1, 0, 0 ));
+    			*/
+    		}
+
+            function initRoatate(cubeFace){
+                isRotating = true;
+                curCubeFace = cubeFace;
+            }
+
+            function endRotate(){
+                curRad = 0;
+                isRotating = false;
+                curCubeFace = null;
+                updateCubePivots();
+            }
+
+            var rad = 0.06; 
+    		function rotateCubeFace(){
+
+                if(isRotating)
+                {    
+        			if(curRad <= Math.PI/2)
+                    {   
+                        curCubeFace.rotate(rad);
+                        curRad += rad; 
+                    }
+                    else
+                    {
+                        curCubeFace.rotate( Math.PI/2 - curRad);
+                        endRotate();
+                    }
+                }
+    		}
+
+            function vector3ToString(vector3)
+            {
+                return vector3.x + "" + vector3.y + ""  + vector3.z;
+            }
+
+            function roundVector3(vector3)
+            {
+                vector3.x = Math.round(vector3.x);
+                vector3.y = Math.round(vector3.y);
+                vector3.z = Math.round(vector3.z);
+            }
+
+            function updateCubePivots()
+            {
+                var cubePivotsCopy = [];
+                var changeMap = [];
+
+                for(var i=0;i<cubePivots.length;i++)
+                {
+                    pivot = cubePivots[i];
+                    //与这个中心相关联的cube
+                    var cube = pivot.children[0];
+                    var position = cube.getWorldPosition();
+                    //var worldRotation = cube.getWorldRotation ();
+                    //position.applyEuler(worldRotation);
+                    position.multiplyScalar(1/SPACING);
+                    roundVector3(position);
+                    var str = vector3ToString(position);
+                    var index = cubePositionDict[str];
+                    changeMap[index] = i;
+                }
+
+                
+                for(var i=0;i<cubePivots.length;i++)
+                {
+                    cubePivotsCopy[i] = cubePivots[i];
+                }
+                for(var i=0;i<changeMap.length;i++)
+                {
+                    cubePivots[i] = cubePivotsCopy[changeMap[i]];
+                }
+            }
+		</script>
+	</body>
